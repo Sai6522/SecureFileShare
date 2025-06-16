@@ -1,0 +1,64 @@
+{% extends 'file_sharing/base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Create Secure Link - SecureFileShare{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Create Secure Download Link</h4>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <h5>File Details:</h5>
+                    <p><strong>Filename:</strong> {{ file.original_filename }}</p>
+                    <p><strong>Size:</strong> {{ file.file_size|filesizeformat }}</p>
+                    <p><strong>Type:</strong> {{ file.file_type }}</p>
+                    <p><strong>Uploaded:</strong> {{ file.upload_date|date:"F d, Y H:i" }}</p>
+                </div>
+                
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.expiry_hours.id_for_label }}" class="form-label">Link Expiry (hours)</label>
+                                {{ form.expiry_hours.errors }}
+                                {{ form.expiry_hours|add_class:"form-control" }}
+                                <small class="form-text text-muted">{{ form.expiry_hours.help_text }}</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.max_downloads.id_for_label }}" class="form-label">Maximum Downloads</label>
+                                {{ form.max_downloads.errors }}
+                                {{ form.max_downloads|add_class:"form-control" }}
+                                <small class="form-text text-muted">{{ form.max_downloads.help_text }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Create Secure Link</button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer">
+                <div class="alert alert-info mb-0">
+                    <h5>Security Note:</h5>
+                    <p>When someone accesses this link, they will need to:</p>
+                    <ol>
+                        <li>Enter their email address</li>
+                        <li>Receive a one-time password (OTP)</li>
+                        <li>Verify the OTP before downloading</li>
+                    </ol>
+                    <p class="mb-0">All download attempts will be logged for security purposes.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

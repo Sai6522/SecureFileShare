@@ -1,0 +1,262 @@
+{% extends 'file_sharing/base.html' %}
+
+{% block title %}Admin Dashboard - SecureFileShare{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h4 class="mb-0">Admin Dashboard</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card bg-primary text-white mb-3">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Total Files</h5>
+                                <h2>{{ all_files.count }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-success text-white mb-3">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Active Links</h5>
+                                <h2>{{ all_links.filter.is_active.count }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-info text-white mb-3">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Downloads</h5>
+                                <h2>{{ all_downloads.count }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-danger text-white mb-3">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Suspicious IPs</h5>
+                                <h2>{{ suspicious_ips|length }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <ul class="nav nav-tabs" id="adminTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="files-tab" data-bs-toggle="tab" data-bs-target="#files" type="button" role="tab">
+                    Files
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="links-tab" data-bs-toggle="tab" data-bs-target="#links" type="button" role="tab">
+                    Secure Links
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="downloads-tab" data-bs-toggle="tab" data-bs-target="#downloads" type="button" role="tab">
+                    Download Logs
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab">
+                    Security Alerts
+                </button>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="adminTabsContent">
+            <!-- Files Tab -->
+            <div class="tab-pane fade show active" id="files" role="tabpanel">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">All Uploaded Files</h5>
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Filename</th>
+                                        <th>User</th>
+                                        <th>Size</th>
+                                        <th>Type</th>
+                                        <th>Upload Date</th>
+                                        <th>Downloads</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for file in all_files %}
+                                    <tr>
+                                        <td>{{ file.id|truncatechars:8 }}</td>
+                                        <td>{{ file.original_filename }}</td>
+                                        <td>{{ file.user.username }}</td>
+                                        <td>{{ file.file_size|filesizeformat }}</td>
+                                        <td>{{ file.file_type }}</td>
+                                        <td>{{ file.upload_date|date:"M d, Y H:i" }}</td>
+                                        <td>
+                                            {% with download_count=file.secure_links.all|length %}
+                                            {{ download_count }}
+                                            {% endwith %}
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="7" class="text-center">No files uploaded yet.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Links Tab -->
+            <div class="tab-pane fade" id="links" role="tabpanel">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">All Secure Links</h5>
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>File</th>
+                                        <th>Created By</th>
+                                        <th>Created At</th>
+                                        <th>Expires At</th>
+                                        <th>Downloads</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for link in all_links %}
+                                    <tr>
+                                        <td>{{ link.id|truncatechars:8 }}</td>
+                                        <td>{{ link.file.original_filename }}</td>
+                                        <td>{{ link.created_by.username }}</td>
+                                        <td>{{ link.created_at|date:"M d, Y H:i" }}</td>
+                                        <td>{{ link.expires_at|date:"M d, Y H:i" }}</td>
+                                        <td>{{ link.current_downloads }}/{{ link.max_downloads }}</td>
+                                        <td>
+                                            {% if link.is_expired %}
+                                            <span class="badge bg-danger">Expired</span>
+                                            {% else %}
+                                            <span class="badge bg-success">Active</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="7" class="text-center">No secure links created yet.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Downloads Tab -->
+            <div class="tab-pane fade" id="downloads" role="tabpanel">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Download Logs</h5>
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>File</th>
+                                        <th>Email</th>
+                                        <th>IP Address</th>
+                                        <th>Timestamp</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for log in all_downloads %}
+                                    <tr>
+                                        <td>{{ log.id|truncatechars:8 }}</td>
+                                        <td>{{ log.secure_link.file.original_filename }}</td>
+                                        <td>{{ log.email }}</td>
+                                        <td>{{ log.ip_address }}</td>
+                                        <td>{{ log.timestamp|date:"M d, Y H:i:s" }}</td>
+                                        <td>
+                                            {% if log.is_successful %}
+                                            <span class="badge bg-success">Success</span>
+                                            {% else %}
+                                            <span class="badge bg-danger">Failed</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="6" class="text-center">No download logs yet.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Security Tab -->
+            <div class="tab-pane fade" id="security" role="tabpanel">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Security Alerts</h5>
+                        
+                        {% if suspicious_ips %}
+                        <div class="alert alert-danger">
+                            <h6>Suspicious IP Addresses</h6>
+                            <p>The following IP addresses have multiple failed download attempts:</p>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>IP Address</th>
+                                        <th>Total Attempts</th>
+                                        <th>Failed Attempts</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for ip, data in suspicious_ips.items %}
+                                    <tr>
+                                        <td>{{ ip }}</td>
+                                        <td>{{ data.total }}</td>
+                                        <td>{{ data.failed }}</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-danger">Block IP</button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-success">
+                            <p class="mb-0">No suspicious activity detected.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

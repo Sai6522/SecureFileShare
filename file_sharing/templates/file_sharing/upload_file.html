@@ -1,0 +1,80 @@
+{% extends 'file_sharing/base.html' %}
+
+{% block title %}Upload File - SecureFileShare{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Upload File</h4>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.file.id_for_label }}" class="form-label">Select File</label>
+                        {{ form.file.errors }}
+                        {{ form.file }}
+                        <small class="form-text text-muted">
+                            Allowed file types: PDF, DOCX, JPG, PNG, MP4, MP3. Maximum size: 50MB.
+                        </small>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Upload & Encrypt</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">File Security Information</h5>
+            </div>
+            <div class="card-body">
+                <p>All files uploaded to SecureFileShare are:</p>
+                <ul>
+                    <li>Encrypted using AES-256 encryption before being stored</li>
+                    <li>Only accessible through secure, time-limited download links</li>
+                    <li>Protected with email verification and OTP authentication</li>
+                    <li>Never shared with third parties</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.querySelector('input[type="file"]');
+        
+        fileInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                // Check file size
+                const maxSize = 50 * 1024 * 1024; // 50MB
+                if (file.size > maxSize) {
+                    alert('File size exceeds the maximum allowed size (50MB).');
+                    this.value = '';
+                    return;
+                }
+                
+                // Check file extension
+                const allowedExtensions = ['.pdf', '.docx', '.jpg', '.jpeg', '.png', '.mp4', '.mp3'];
+                const fileName = file.name.toLowerCase();
+                const fileExt = '.' + fileName.split('.').pop();
+                
+                if (!allowedExtensions.includes(fileExt)) {
+                    alert('Unsupported file type. Allowed types: PDF, DOCX, JPG, PNG, MP4, MP3.');
+                    this.value = '';
+                    return;
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

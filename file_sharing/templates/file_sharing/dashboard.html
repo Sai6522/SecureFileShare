@@ -1,0 +1,132 @@
+{% extends 'file_sharing/base.html' %}
+
+{% block title %}Dashboard - SecureFileShare{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="card-title">Welcome to SecureFileShare</h2>
+                <p class="card-text">Securely share your files with end-to-end encryption and time-limited access.</p>
+                <a href="{% url 'upload_file' %}" class="btn btn-primary">Upload New File</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Your Files</h5>
+            </div>
+            <div class="card-body">
+                {% if user_files %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Filename</th>
+                                <th>Size</th>
+                                <th>Type</th>
+                                <th>Uploaded</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for file in user_files %}
+                            <tr>
+                                <td>{{ file.original_filename }}</td>
+                                <td>{{ file.file_size|filesizeformat }}</td>
+                                <td>{{ file.file_type }}</td>
+                                <td>{{ file.upload_date|date:"M d, Y" }}</td>
+                                <td>
+                                    <a href="{% url 'create_link' file.id %}" class="btn btn-sm btn-primary">Create Link</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">You haven't uploaded any files yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Your Secure Links</h5>
+            </div>
+            <div class="card-body">
+                {% if user_links %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>File</th>
+                                <th>Created</th>
+                                <th>Expires</th>
+                                <th>Downloads</th>
+                                <th>Link</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for link in user_links %}
+                            <tr>
+                                <td>{{ link.file.original_filename }}</td>
+                                <td>{{ link.created_at|date:"M d, Y" }}</td>
+                                <td>{{ link.expires_at|date:"M d, Y H:i" }}</td>
+                                <td>{{ link.current_downloads }}/{{ link.max_downloads }}</td>
+                                <td>
+                                    {% if link.is_expired %}
+                                    <span class="badge bg-danger">Expired</span>
+                                    {% else %}
+                                    <button class="btn btn-sm btn-info copy-link" 
+                                            data-link="{{ request.scheme }}://{{ request.get_host }}{% url 'download_request' link.id %}">
+                                        Copy Link
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">You haven't created any secure links yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const copyButtons = document.querySelectorAll('.copy-link');
+        
+        copyButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const link = this.getAttribute('data-link');
+                navigator.clipboard.writeText(link).then(() => {
+                    const originalText = this.textContent;
+                    this.textContent = 'Copied!';
+                    this.classList.remove('btn-info');
+                    this.classList.add('btn-success');
+                    
+                    setTimeout(() => {
+                        this.textContent = originalText;
+                        this.classList.remove('btn-success');
+                        this.classList.add('btn-info');
+                    }, 2000);
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}

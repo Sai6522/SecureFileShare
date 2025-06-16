@@ -1,0 +1,77 @@
+{% extends 'file_sharing/base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Verify OTP - SecureFileShare{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Verify OTP</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <p>A 6-digit verification code has been sent to <strong>{{ otp_verification.email }}</strong>.</p>
+                    <p class="mb-0">Please enter the code below to download the file.</p>
+                </div>
+                
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.otp_code.id_for_label }}" class="form-label">Verification Code</label>
+                        {{ form.otp_code.errors }}
+                        {{ form.otp_code|add_class:"form-control form-control-lg text-center" }}
+                        <small class="form-text text-muted">{{ form.otp_code.help_text }}</small>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Verify & Download</button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer">
+                <p class="text-muted mb-0 text-center">
+                    <small>This verification code will expire in 5 minutes.</small>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const otpInput = document.querySelector('input[name="otp_code"]');
+        
+        // Auto-focus the OTP input
+        otpInput.focus();
+        
+        // Add timer for OTP expiration
+        const createdAt = new Date('{{ otp_verification.created_at|date:"c" }}');
+        const expiresAt = new Date('{{ otp_verification.expires_at|date:"c" }}');
+        const timerElement = document.querySelector('.card-footer small');
+        
+        function updateTimer() {
+            const now = new Date();
+            const timeLeft = Math.max(0, Math.floor((expiresAt - now) / 1000));
+            
+            if (timeLeft <= 0) {
+                timerElement.textContent = 'This verification code has expired.';
+                timerElement.classList.add('text-danger');
+                clearInterval(timerInterval);
+                return;
+            }
+            
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timerElement.textContent = `This verification code will expire in ${minutes}:${seconds < 10 ? '0' : ''}${seconds}.`;
+        }
+        
+        const timerInterval = setInterval(updateTimer, 1000);
+        updateTimer();
+    });
+</script>
+{% endblock %}
