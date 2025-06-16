@@ -5,6 +5,17 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
+# Database configuration
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.environ.get('SQLITE_CLOUD_URL', BASE_DIR / 'db.sqlite3'),
+        'OPTIONS': {
+            'driver': 'sqlitecloud',
+            'uri': True,
+        }
+    }
+}
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
