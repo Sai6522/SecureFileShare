@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'widget_tweaks',
     'file_sharing',
+    'storages',
 ]
 
 MIDDLEWARE = [
@@ -155,6 +156,18 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.onrender.com']
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-   # Configure media files
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+  # Filebase settings
+if 'USE_FILEBASE' in os.environ and os.environ['USE_FILEBASE'] == 'True':
+   DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+   AWS_ACCESS_KEY_ID = os.environ.get('FILEBASE_ACCESS_KEY_ID')
+   AWS_SECRET_ACCESS_KEY = os.environ.get('FILEBASE_SECRET_ACCESS_KEY')
+   AWS_STORAGE_BUCKET_NAME = os.environ.get('FILEBASE_BUCKET_NAME')
+   AWS_S3_ENDPOINT_URL = 'https://s3.filebase.com'
+   AWS_S3_OBJECT_PARAMETERS = {
+       'CacheControl': 'max-age=86400',
+   }
+   AWS_LOCATION = 'media'
+   MEDIA_URL = f'https://{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/{AWS_LOCATION}/'
+else:
+   MEDIA_URL = '/media/'
+   MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
