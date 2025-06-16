@@ -27,35 +27,37 @@ def derive_key(password, salt=None):
 def encrypt_file(file_path, key=None):
     """
     Encrypt a file using Fernet symmetric encryption
-    
+
     Args:
         file_path: Path to the file to encrypt
         key: Optional encryption key (if None, a new key will be generated)
-        
+
     Returns:
         tuple: (encrypted_file_path, encryption_key)
     """
     if key is None:
         key = generate_key()
-    
+
     # If key is a string, convert to bytes
     if isinstance(key, str):
         key = key.encode('utf-8')
-    
+
     fernet = Fernet(key)
-    
+
     # Read the file
     with open(file_path, 'rb') as file:
         file_data = file.read()
-    
+
     # Encrypt the data
     encrypted_data = fernet.encrypt(file_data)
-    
-    # Write the encrypted data to a new file
+
+    # Generate a unique filename for the encrypted file
     encrypted_file_path = f"{file_path}.encrypted"
+
+    # Write the encrypted data to a new file
     with open(encrypted_file_path, 'wb') as file:
         file.write(encrypted_data)
-    
+
     return encrypted_file_path, key.decode('utf-8') if isinstance(key, bytes) else key
 
 def decrypt_file(encrypted_file_path, key, output_path=None):
