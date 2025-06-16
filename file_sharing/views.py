@@ -58,45 +58,60 @@ def dashboard(request):
 
 @login_required
 def upload_file(request):
-    """File upload view"""
     if request.method == 'POST':
         form = FileUploadForm(request.POST, request.FILES)
         if form.is_valid():
             uploaded_file = request.FILES['file']
-            
-            # Save the uploaded file temporarily
-            temp_path = os.path.join(settings.MEDIA_ROOT, 'uploads', uploaded_file.name)
+
+            # Save the file temporarily
+            temp_path = os.path.join(settings.MEDIA_ROOT, 'temp', uploaded_file.name)
             os.makedirs(os.path.dirname(temp_path), exist_ok=True)
-            
+
             with open(temp_path, 'wb+') as destination:
                 for chunk in uploaded_file.chunks():
                     destination.write(chunk)
-            
+
             # Encrypt the file
             encrypted_path, encryption_key = encrypt_file(temp_path)
-            
-            # Create database record
-            encrypted_file = EncryptedFile(
+
+            # Generate a unique filename for storage
+            encrypted_filename = f"{uuid.uuid4()}{os.path.splitext(uploaded_file.name)[1]}.encrypted"
+
+            # Create the encrypted file record
+            encrypted_file = EncryptedFile.objects.create(
                 user=request.user,
                 original_filename=uploaded_file.name,
-                encrypted_filename=os.path.basename(encrypted_path),
+                encrypted_filename=encrypted_filename,
                 file_size=uploaded_file.size,
                 file_type=uploaded_file.content_type,
                 encryption_key=encryption_key
             )
-            encrypted_file.save()
-            
-            # Delete the temporary unencrypted file
+
+            # Save the encrypted file to storage
+            if 'USE_FILEBASE' in os.environ and os.environ['USE_FILEBASE'] == 'True':
+                from django.core.files.storage import default_storage
+                from django.core.files.base import ContentFile
+
+                with open(encrypted_path, 'rb') as f:
+                    default_storage.save(encrypted_filename, ContentFile(f.read()))
+            else:
+                # Move to final location
+                final_path = os.path.join(settings.MEDIA_ROOT, 'uploads', encrypted_filename)
+                os.makedirs(os.path.dirname(final_path), exist_ok=True)
+                shutil.move(encrypted_path, final_path)
+
+            # Clean up temporary files
             if os.path.exists(temp_path):
                 os.remove(temp_path)
-            
-            messages.success(request, f"File '{uploaded_file.name}' uploaded and encrypted successfully!")
+            if os.path.exists(encrypted_path) and encrypted_path != final_path:
+                os.remove(encrypted_path)
+
+            messages.success(request, "File uploaded and encrypted successfully!")
             return redirect('dashboard')
     else:
         form = FileUploadForm()
-    
-    return render(request, 'file_sharing/upload_file.html', {'form': form})
 
+    return render(request, 'file_sharing/upload_file.html', {'form': form})
 @login_required
 def create_secure_link(request, file_id):
     """Create a secure download link for a file"""
